@@ -75,34 +75,53 @@ Astro.props是Astro内置的全局对象，用来存放父组件(页面)传递�
 在布局文件中：`const {frontmatter} = Astro.props;`。
 在markdown文件中的frontmatter添加`layout: 布局路径`
 
-### `Object.values(import.meta.glob('./posts/*.md', { eager: true }))`详解
-- `import.meta.glob('./posts/*.md')` :
-  ```JavaScript
-    console.log(import.meta.glob('./posts/*.md'));
-  ```
-  <img src="../../../imgs/glob_no_eager.png">
+### 批量导入(Glob Import)
+`import.meta` 是一个由 JavaScript 引擎提供的对象，它包含当前模块（当前文件）的元数据信息。
+```astro
+  ---
+  console.log(import.meta); //服务器端，vite引擎下
+  ---
 
-  这个函数返回一个对象<br />
-  对象的'Key'是：当前文件所在文件夹的所有`'./posts/*.md'`文件的路径
-  对象的'Value'是：一个异步函数
+  <script>
+      console.log(import.meta); //浏览器端，原生JavaScript
+  </script>
+```
 
-- `import.meta.glob('./posts/*.md', { eager: true })`
-  把eager设为true后，Value会直接返回每个页面的模块对象
-  <img src="../../../imgs/glob.png">
+- 在标准JavaScript中：
+<img src="../../../imgs/meta_js.png">
 
-- `Object.values()`
-  这个方法会把参数中的对象的values提取出来放到一个数组中
+  浏览器原生提供的模块元数据，包含 url（当前位置）和 resolve（路径解析工具）
+
+- 在Vite引擎下(Astro底层):
+<img src="../../../imgs/meta_vite.png">
+
+  这里就能看到`glob()`方法了
+
+也就是说`import.meta.glob()`是Vite引擎的特性！
+
+在控制台打印`import.meta.glob('./posts/*.md')`得到：
+<img src="../../../imgs/glob_ne.png"><br />
+`glob`返回的对象，其Key是匹配到的文件的url，Value是一个函数用来生成导入语句
+
+再把`glob`的`eager`参数设置为`true`<br />
+i.e. `import.meta.glob('./posts/*.md', { eager: true })`得到：
+<img src="../../../imgs/glob_e.png">
+Value直接就是'元数据模块'！
 
 ### `{allPosts.map((post: any) => <li><a href={post.url}> {post.frontmatter.title} </a></li>)}`详解
 - `allPosts.map(一个函数)`
   迭代allPosts数组中的每个元素，并将其作为参数传递给函数
 
-### `Astro.params`详解
-- 我的文件路径(路由): src/pages/tags/[tag].astro
-- 用户访问的URL: src/pages/tags/Hello
-  
-则`Astro.params = {tag: "Hello"}`
+### 动态路由页面
+我在`src/pages/[test].astro`文件中写入以下代码：
+<img src="../../../imgs/[test].png">
 
-#### `Astro.params` vs `Astro.props`
-- `Astro.params`获取的是用户访问的URL
-- `Astro.props`获取的是父组件的属性
+`getStaticPaths()`函数返回的数组用来告诉Astro所有可能的路径是什么
+以上述代码为例，所有可能的路径如下：
+- `/test1`
+- `/test2`
+- `/test3`
+  
+Astro 会预生成上面三个页面
+
+因此当用户在浏览器访问`/test1`，Astro会在服务器端将静态预生成好的`test1.astro`页面，此时`console.log(Astro.params);`会输出：`{ test: 'test1' }`
