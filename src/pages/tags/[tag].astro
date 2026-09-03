@@ -9,25 +9,36 @@ export async function getStaticPaths() {
   const uniqueTags = [...new Set(allPosts.map((post: any) => post.frontmatter.tags).flat())];
   // 通过Set去重，得到所有tag的数组
 
-  return [
-    { params: { tag: "astro" }, props: {posts: allPosts}},
-    { params: { tag: "successes" }, props: {posts: allPosts} },
-    { params: { tag: "community" }, props: {posts: allPosts} },
-    { params: { tag: "blogging" }, props: {posts: allPosts} },
-    { params: { tag: "setbacks" }, props: {posts: allPosts} },
-    { params: { tag: "learning in public" }, props: {posts: allPosts} },
-  ];
-  // 数组中的每一个元素都是一个网页的"蓝图"，其属性被存在每一项对应的Astro对象中
+  return uniqueTags.map((tag) => {
+    const filteredPosts = allPosts.filter((post: any) => post.frontmatter.tags.includes(tag));
+    return {
+      params: { tag },
+      props: { posts: filteredPosts },
+    };
+  });
+  // 比如现在的uniqueTags = ["astro"、"successes"、"community"、"blogging"、"setbacks"、"learning in public"]
+  // 对于"astro"这个tag
+  // filteredPosts是所有包含了"astro"这个tag的网页的Moudle的数组
+
+  // return [
+  //   { params: { tag: "astro" }, props: {posts: allPosts}},
+  //   { params: { tag: "successes" }, props: {posts: allPosts} },
+  //   { params: { tag: "community" }, props: {posts: allPosts} },
+  //   { params: { tag: "blogging" }, props: {posts: allPosts} },
+  //   { params: { tag: "setbacks" }, props: {posts: allPosts} },
+  //   { params: { tag: "learning in public" }, props: {posts: allPosts} },
+  // ];
+  // // 数组中的每一个元素都是一个网页的"蓝图"，其属性被存在每一项对应的Astro对象中
 }
 
 const { tag } = Astro.params;
 const {posts} = Astro.props;  //对应项的元数据模块
-const filteredPosts = posts.filter((post: any) => post.frontmatter.tags?.includes(tag));  //每一项Moudle的frontmatter中的tags是否包含当前的tag(url来的)？
+// const filteredPosts = posts.filter((post: any) => post.frontmatter.tags?.includes(tag));  //每一项Moudle的frontmatter中的tags是否包含当前的tag(url来的)？
 // 由于我的post-5的frontmatter中没有tags, 所以动态生成的网页不会有post-5!!!
 ---
 <BaseLayout pageTitle={tag}>
   <p>包含「{tag}」标签的文章</p>
   <ul>
-    {filteredPosts.map((post: any) => <BlogPost url={post.url} blogTitle={post.frontmatter.title} />)}
+    {posts.map((post: any) => <BlogPost url={post.url} blogTitle={post.frontmatter.title} />)}
   </ul>
 </BaseLayout>
